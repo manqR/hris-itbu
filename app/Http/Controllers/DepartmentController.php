@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
-use App\Models\Branch;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -11,7 +11,7 @@ class DepartmentController extends Controller
 {
     public function index()
     {
-        $departments = Department::with(['branch', 'parent'])
+        $departments = Department::with(['organization', 'parent'])
             ->withCount(['assignments' => fn($q) => $q->active()])
             ->latest()
             ->get();
@@ -21,15 +21,15 @@ class DepartmentController extends Controller
 
     public function create()
     {
-        $branches = Branch::active()->get();
+        $organizations = Organization::active()->get();
         $parentDepartments = Department::active()->get();
-        return view('organization.departments.create', compact('branches', 'parentDepartments'));
+        return view('organization.departments.create', compact('organizations', 'parentDepartments'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'branch_id' => 'required|exists:branches,id',
+            'organization_id' => 'required|exists:organizations,id',
             'code' => 'required|string|max:20',
             'name' => 'required|string|max:100',
             'parent_id' => 'nullable|exists:departments,id',
@@ -39,7 +39,6 @@ class DepartmentController extends Controller
         Department::create([
             ...$validated,
             'is_active' => true,
-            'created_by' => auth()->id(),
         ]);
 
         return redirect()->route('departments.index')->with('success', 'Department created successfully.');
@@ -47,15 +46,15 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
-        $branches = Branch::active()->get();
+        $organizations = Organization::active()->get();
         $parentDepartments = Department::active()->where('id', '!=', $department->id)->get();
-        return view('organization.departments.edit', compact('department', 'branches', 'parentDepartments'));
+        return view('organization.departments.edit', compact('department', 'organizations', 'parentDepartments'));
     }
 
     public function update(Request $request, Department $department)
     {
         $validated = $request->validate([
-            'branch_id' => 'required|exists:branches,id',
+            'organization_id' => 'required|exists:organizations,id',
             'code' => ['required', 'string', 'max:20'],
             'name' => 'required|string|max:100',
             'parent_id' => 'nullable|exists:departments,id',
@@ -63,7 +62,7 @@ class DepartmentController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $department->update([...$validated, 'updated_by' => auth()->id()]);
+        $department->update($validated);
 
         return redirect()->route('departments.index')->with('success', 'Department updated successfully.');
     }

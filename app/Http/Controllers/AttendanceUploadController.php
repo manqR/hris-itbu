@@ -83,7 +83,6 @@ class AttendanceUploadController extends Controller
                         'clock_out_time' => $out ? "$date $out" : null,
                         'status' => 'present',
                         'source' => 'manual_upload',
-                        'created_by' => auth()->id(),
                     ]);
                 }
                 $count++;

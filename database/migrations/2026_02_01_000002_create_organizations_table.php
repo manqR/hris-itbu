@@ -9,22 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      * 
-     * Branches represent organizational units (Yayasan, Malaka, ITBU)
+     * Organizations represent organizational units (Yayasan, Unit, Cabang)
      */
     public function up(): void
     {
-        Schema::create('branches', function (Blueprint $table) {
+        Schema::create('organizations', function (Blueprint $table) {
             $table->id();
             $table->string('code', 20)->unique();
             $table->string('name', 100);
             $table->enum('type', ['yayasan', 'unit', 'cabang'])->default('unit');
-            $table->foreignId('parent_id')->nullable()->constrained('branches')->nullOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('organizations')->nullOnDelete();
             $table->text('address')->nullable();
             $table->string('phone', 20)->nullable();
             $table->string('email', 100)->nullable();
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('employees')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('employees')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 
@@ -38,6 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('branches');
+        Schema::dropIfExists('organizations');
     }
 };

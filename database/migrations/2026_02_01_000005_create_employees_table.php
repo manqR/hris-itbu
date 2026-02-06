@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      * 
-     * Core employee data with temporal versioning support
+     * Core employee data - also serves as the authentication model
      */
     public function up(): void
     {
@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('employee_number', 20)->unique();
             $table->string('name', 100);
             $table->string('email', 100)->unique();
+            $table->string('password')->nullable(); // For authentication
+            $table->rememberToken(); // For "remember me" functionality
             $table->string('phone', 20)->nullable();
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->date('birth_date')->nullable();
@@ -32,10 +34,9 @@ return new class extends Migration
             $table->enum('employment_status', ['active', 'resigned', 'terminated', 'retired'])->default('active');
             $table->enum('employment_type', ['permanent', 'contract', 'probation', 'internship'])->default('permanent');
             $table->string('photo')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete(); // Link to auth user
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('employees')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('employees')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 

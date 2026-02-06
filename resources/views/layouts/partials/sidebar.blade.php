@@ -1,93 +1,91 @@
-{{-- Enterprise Sidebar Navigation --}}
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <span class="sidebar-logo">HRIS</span>
+<aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#0B1120] text-slate-400 flex flex-col z-30 transition-transform duration-300 transform -translate-x-full lg:translate-x-0 border-r border-[#1e293b]">
+    <!-- Brand Logo & Toggle -->
+    <div class="h-20 flex items-center justify-between px-6 shrink-0">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-logo">H</div>
+            <span class="sidebar-brand-text">HRMS</span>
+        </div>
+        
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="sidebar-theme-toggle" title="Toggle theme">
+            <i data-lucide="sun" class="w-4 h-4 hidden dark-theme-icon"></i>
+            <i data-lucide="moon" class="w-4 h-4 light-theme-icon"></i>
+        </button>
     </div>
     
-    <nav class="sidebar-nav">
-        {{-- Main Navigation --}}
-        <div class="nav-section">
-            <div class="nav-section-label">Main</div>
-            
-            <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i data-lucide="layout-dashboard" class="nav-item-icon"></i>
-                <span>Dashboard</span>
-            </a>
-        </div>
+    <!-- Navigation -->
+    <nav class="flex-1 px-4 overflow-y-auto custom-scrollbar flex flex-col gap-1 py-4">
         
-        {{-- Employee Management --}}
-        <div class="nav-section">
-            <div class="nav-section-label">Employees</div>
-            
-            <a href="{{ route('employees.index') }}" class="nav-item {{ request()->routeIs('employees.*') ? 'active' : '' }}">
-                <i data-lucide="users" class="nav-item-icon"></i>
-                <span>All Employees</span>
-            </a>
-            
-            <a href="#" class="nav-item">
-                <i data-lucide="user-plus" class="nav-item-icon"></i>
-                <span>Add Employee</span>
-            </a>
-        </div>
-        
-        {{-- Organization --}}
-        <div class="nav-section">
-            <div class="nav-section-label">Organization</div>
-            
-            <a href="{{ route('branches.index') }}" class="nav-item {{ request()->routeIs('branches.*') ? 'active' : '' }}">
-                <i data-lucide="building-2" class="nav-item-icon"></i>
-                <span>Branches</span>
-            </a>
-            
-            <a href="{{ route('departments.index') }}" class="nav-item {{ request()->routeIs('departments.*') ? 'active' : '' }}">
-                <i data-lucide="network" class="nav-item-icon"></i>
-                <span>Departments</span>
-            </a>
-            
-            <a href="{{ route('positions.index') }}" class="nav-item {{ request()->routeIs('positions.*') ? 'active' : '' }}">
-                <i data-lucide="briefcase" class="nav-item-icon"></i>
-                <span>Positions</span>
-            </a>
-        </div>
-        
-        {{-- Attendance & Leave --}}
-        <div class="nav-section">
-            <div class="nav-section-label">Attendance</div>
-            
-            <a href="{{ route('attendance.index') }}" class="nav-item {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
-                <i data-lucide="clock" class="nav-item-icon"></i>
-                <span>Attendance</span>
-            </a>
-            
-            <a href="#" class="nav-item">
-                <i data-lucide="calendar-off" class="nav-item-icon"></i>
-                <span>Leave Requests</span>
-            </a>
-        </div>
-        
-        {{-- Reports --}}
-        <div class="nav-section">
-            <div class="nav-section-label">Reports</div>
-            
-            <a href="#" class="nav-item">
-                <i data-lucide="bar-chart-3" class="nav-item-icon"></i>
-                <span>Reports</span>
-            </a>
-            
-            <a href="#" class="nav-item">
-                <i data-lucide="scroll-text" class="nav-item-icon"></i>
-                <span>Audit Log</span>
-            </a>
-        </div>
-        
-        {{-- Settings --}}
-        <div class="nav-section">
-            <div class="nav-section-label">Settings</div>
-            
-            <a href="#" class="nav-item">
-                <i data-lucide="settings" class="nav-item-icon"></i>
-                <span>Settings</span>
-            </a>
-        </div>
+        @php
+            $menuItems = \App\Services\MenuService::getMenuForUser(auth()->user());
+        @endphp
+
+        @foreach($menuItems as $item)
+            @if(empty($item['children']))
+                {{-- Single menu item --}}
+                <a href="{{ $item['url'] }}" 
+                   class="sidebar-menu-item {{ $item['is_active'] ? 'sidebar-menu-item--active' : '' }}">
+                    <div class="sidebar-menu-icon">
+                        <i data-lucide="{{ $item['icon'] ?? 'circle' }}" class="w-5 h-5"></i>
+                    </div>
+                    <span class="sidebar-menu-label">{{ $item['name'] }}</span>
+                </a>
+            @else
+                {{-- Menu item with children (collapsible) --}}
+                @php
+                    $isParentActive = collect($item['children'])->contains('is_active', true);
+                @endphp
+                
+                <div class="sidebar-menu-group" x-data="{ open: {{ $isParentActive ? 'true' : 'false' }} }">
+                    <button @click="open = !open" 
+                            class="sidebar-menu-item sidebar-menu-group-btn {{ $isParentActive ? 'sidebar-menu-item--active' : '' }}">
+                        <div class="sidebar-menu-icon">
+                            <i data-lucide="{{ $item['icon'] ?? 'folder' }}" class="w-5 h-5"></i>
+                        </div>
+                        <span class="sidebar-menu-label">{{ $item['name'] }}</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 sidebar-menu-chevron" :class="{ 'sidebar-menu-chevron--open': open }"></i>
+                    </button>
+                    
+                    {{-- Sub-menu items --}}
+                    <div x-show="open" x-collapse class="sidebar-submenu">
+                        @foreach($item['children'] as $child)
+                            <a href="{{ $child['url'] }}" 
+                               class="sidebar-submenu-item {{ $child['is_active'] ? 'sidebar-submenu-item--active' : '' }}">
+                                <div class="sidebar-submenu-icon">
+                                    <i data-lucide="{{ $child['icon'] ?? 'circle' }}" class="w-4 h-4"></i>
+                                </div>
+                                <span>{{ $child['name'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        @endforeach
+
     </nav>
+    
+    <!-- User Profile Card -->
+    <div class="p-4 mt-auto shrink-0">
+        <div class="sidebar-user-card">
+            <div class="sidebar-user-avatar">
+                {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                <div class="sidebar-user-status"></div>
+            </div>
+            
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">{{ auth()->user()->name ?? 'User' }}</div>
+                <div class="sidebar-user-email">{{ auth()->user()->email ?? 'user@company.com' }}</div>
+            </div>
+            
+            <form action="{{ route('logout') }}" method="POST" class="m-0">
+                @csrf
+                <button type="submit" class="sidebar-logout-btn" title="Logout">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
 </aside>
+
+<!-- Mobile Sidebar Overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>

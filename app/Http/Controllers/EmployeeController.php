@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
-use App\Models\Branch;
+use App\Models\Organization;
 use App\Models\Department;
 use App\Models\Position;
 use App\Models\Assignment;
@@ -17,7 +17,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Employee::with(['primaryAssignment.branch', 'primaryAssignment.position'])
+        $query = Employee::with(['primaryAssignment.organization', 'primaryAssignment.position'])
             ->latest();
 
         // Filter by status
@@ -25,10 +25,10 @@ class EmployeeController extends Controller
             $query->where('employment_status', $request->status);
         }
 
-        // Filter by branch
-        if ($request->filled('branch_id')) {
+        // Filter by organization
+        if ($request->filled('organization_id')) {
             $query->whereHas('activeAssignments', function ($q) use ($request) {
-                $q->where('branch_id', $request->branch_id);
+                $q->where('organization_id', $request->organization_id);
             });
         }
 
@@ -43,9 +43,9 @@ class EmployeeController extends Controller
         }
 
         $employees = $query->paginate(15);
-        $branches = Branch::active()->get();
+        $organizations = Organization::active()->get();
 
-        return view('employees.index', compact('employees', 'branches'));
+        return view('employees.index', compact('employees', 'organizations'));
     }
 
     /**
@@ -53,7 +53,7 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        $branches = Branch::active()->get();
+        $organizations = Organization::active()->get();
         $departments = Department::active()->get();
         $positions = Position::active()->get();
         $supervisors = Employee::active()
@@ -64,7 +64,7 @@ class EmployeeController extends Controller
             })
             ->get();
 
-        return view('employees.create', compact('branches', 'departments', 'positions', 'supervisors'));
+        return view('employees.create', compact('organizations', 'departments', 'positions', 'supervisors'));
     }
 
     /**
@@ -88,42 +88,56 @@ class EmployeeController extends Controller
             'hire_date' => 'required|date',
             'employment_type' => 'required|in:permanent,contract,probation,internship',
             // Initial assignment
-            'branch_id' => 'required|exists:branches,id',
+            'organization_ids' => 'required|array|min:1',
+            'organization_ids.*' => 'exists:organizations,id',
             'department_id' => 'nullable|exists:departments,id',
             'position_id' => 'nullable|exists:positions,id',
             'supervisor_id' => 'nullable|exists:employees,id',
+            // Login Access
+            'create_user_account' => 'nullable|boolean',
+            'password' => 'nullable|required_if:create_user_account,1|string|min:8|confirmed',
         ]);
 
-        // Create employee
-        $employee = Employee::create([
+        // Create employee with password if account creation is requested
+        $employeeData = [
             ...$validated,
             'employment_status' => 'active',
             'is_active' => true,
-            'created_by' => auth()->id(),
-        ]);
+        ];
 
-        // Create initial assignment
-        Assignment::create([
-            'employee_id' => $employee->id,
-            'branch_id' => $request->branch_id,
-            'department_id' => $request->department_id,
-            'position_id' => $request->position_id,
-            'supervisor_id' => $request->supervisor_id,
-            'start_date' => $request->hire_date,
-            'is_primary' => true,
-            'status' => 'active',
-            'created_by' => auth()->id(),
-        ]);
+        if ($request->boolean('create_user_account') && $request->filled('password')) {
+            $employeeData['password'] = $request->password; // Will be hashed by model cast
+        }
 
-        // Record history
-        $employee->recordHistory(
-            'assignment_added',
-            null,
-            null,
-            ['branch_id' => $request->branch_id, 'position_id' => $request->position_id],
-            now(),
-            'Initial assignment upon hire'
-        );
+        $employee = Employee::create($employeeData);
+
+        // Create assignments for all selected organizations
+        foreach ($request->organization_ids as $index => $organizationId) {
+            $isPrimary = ($index === 0); // First selected organization is primary
+
+            Assignment::create([
+                'employee_id' => $employee->id,
+                'organization_id' => $organizationId,
+                'department_id' => $request->department_id,
+                'position_id' => $request->position_id,
+                'supervisor_id' => $request->supervisor_id,
+                'start_date' => $request->hire_date,
+                'is_primary' => $isPrimary,
+                'status' => 'active',
+            ]);
+
+            // Record history for the primary assignment only to avoid clutter
+            if ($isPrimary) {
+                $employee->recordHistory(
+                    'assignment_added',
+                    null,
+                    null,
+                    ['organization_id' => $organizationId, 'position_id' => $request->position_id],
+                    now(),
+                    'Initial assignment upon hire'
+                );
+            }
+        }
 
         return redirect()
             ->route('employees.show', $employee)
@@ -136,14 +150,20 @@ class EmployeeController extends Controller
     public function show(Employee $employee)
     {
         $employee->load([
-            'assignments.branch',
+            'assignments.organization',
             'assignments.department',
             'assignments.position',
             'assignments.supervisor',
             'histories' => fn($q) => $q->latest()->take(10),
         ]);
 
-        return view('employees.show', compact('employee'));
+        // Data for assignment modal
+        $organizations = Organization::active()->get();
+        $departments = Department::active()->get();
+        $positions = Position::active()->get();
+        $supervisors = Employee::active()->where('id', '!=', $employee->id)->get();
+
+        return view('employees.show', compact('employee', 'organizations', 'departments', 'positions', 'supervisors'));
     }
 
     /**
@@ -151,14 +171,14 @@ class EmployeeController extends Controller
      */
     public function edit(Employee $employee)
     {
-        $branches = Branch::active()->get();
+        $organizations = Organization::active()->get();
         $departments = Department::active()->get();
         $positions = Position::active()->get();
         $supervisors = Employee::active()
             ->where('id', '!=', $employee->id)
             ->get();
 
-        return view('employees.edit', compact('employee', 'branches', 'departments', 'positions', 'supervisors'));
+        return view('employees.edit', compact('employee', 'organizations', 'departments', 'positions', 'supervisors'));
     }
 
     /**
@@ -180,11 +200,16 @@ class EmployeeController extends Controller
             'bank_account' => 'nullable|string|max:30',
             'bank_name' => 'nullable|string|max:50',
             'employment_type' => 'required|in:permanent,contract,probation,internship',
+            // Account Access
+            'set_password' => 'nullable|boolean',
+            'password' => 'nullable|required_if:set_password,1|string|min:8|confirmed',
         ]);
 
         // Track changes for history
         $changes = [];
         foreach ($validated as $key => $value) {
+            if (in_array($key, ['set_password', 'password'])) continue;
+            
             if ($employee->{$key} !== $value) {
                 $changes[$key] = [
                     'old' => $employee->{$key},
@@ -193,10 +218,18 @@ class EmployeeController extends Controller
             }
         }
 
-        $employee->update([
+        // Prepare update data
+        $updateData = [
             ...$validated,
             'updated_by' => auth()->id(),
-        ]);
+        ];
+
+        // Set password if requested
+        if ($request->boolean('set_password') && $request->filled('password')) {
+            $updateData['password'] = $request->password; // Will be hashed by model cast
+        }
+
+        $employee->update($updateData);
 
         // Record history for significant changes
         if (!empty($changes)) {

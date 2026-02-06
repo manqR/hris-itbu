@@ -2,69 +2,198 @@
 
 @section('title', 'Positions')
 
-@section('breadcrumb')
-    <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-item active">Positions</span>
-@endsection
-
 @section('content')
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Positions</h1>
-            <p class="page-subtitle">Manage job positions and titles</p>
+<div class="space-y-5">
+    {{-- Page Header --}}
+    <div class="flex items-start justify-between gap-4">
+        <div class="flex-1">
+            <h1 class="text-2xl font-semibold text-white mb-1">Position Management</h1>
+            <p class="text-sm text-slate-400">Manage job titles, levels, and responsibilities</p>
         </div>
-        <div class="page-actions">
-            <a href="{{ route('positions.create') }}" class="btn btn-primary">
-                <i data-lucide="plus" width="18" height="18"></i>
-                Add Position
+        <div class="flex-shrink-0">
+            <a href="{{ route('positions.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-all shadow-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Add Position</span>
             </a>
         </div>
     </div>
-    
-    <div class="card">
-        <div class="table-container">
-            <table class="table">
+
+    {{-- Toolbar --}}
+    <div class="bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-700/50 shadow-lg">
+        <div class="p-4">
+            <form method="GET" action="{{ route('positions.index') }}">
+                <div class="flex flex-col lg:flex-row gap-3">
+                    {{-- Search --}}
+                    <div class="flex-1 lg:max-w-md">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                            <input 
+                                type="text" 
+                                name="search" 
+                                value="{{ request('search') }}"
+                                placeholder="Search by name or code..." 
+                                class="w-full h-10 pl-10 pr-4 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all"
+                            >
+                        </div>
+                    </div>
+
+                    {{-- Filters --}}
+                    <div class="flex flex-col sm:flex-row gap-3 lg:flex-1">
+                        <div class="flex-1 sm:max-w-[160px]">
+                            <select 
+                                name="level" 
+                                class="w-full h-10 px-3.5 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all cursor-pointer"
+                            >
+                                <option value="">All Levels</option>
+                                @for($i = 1; $i <= 10; $i++)
+                                    <option value="{{ $i }}" {{ request('level') == $i ? 'selected' : '' }}>Level {{ $i }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="flex-1 sm:max-w-[160px]">
+                            <select 
+                                name="status" 
+                                class="w-full h-10 px-3.5 bg-slate-800/50 border border-slate-700/50 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 transition-all cursor-pointer"
+                            >
+                                <option value="">All Status</option>
+                                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="flex gap-2">
+                            <button 
+                                type="submit" 
+                                class="h-10 px-4 bg-slate-700/50 hover:bg-slate-700 border border-slate-600/50 text-white text-sm font-medium rounded-lg transition-all"
+                            >
+                                Apply
+                            </button>
+                            
+                            @if(request()->hasAny(['search', 'level', 'status']))
+                                <a 
+                                    href="{{ route('positions.index') }}" 
+                                    class="h-10 px-3.5 flex items-center justify-center bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 text-slate-400 hover:text-white rounded-lg transition-all"
+                                    title="Clear all filters"
+                                >
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Data Table --}}
+    <div class="bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-700/50 shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
                 <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Level</th>
-                        <th>Employees</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                    <tr class="border-b border-slate-700/50 bg-slate-800/30">
+                        <th class="px-4 py-3.5 text-left">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Code</span>
+                        </th>
+                        <th class="px-4 py-3.5 text-left">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Position Name</span>
+                        </th>
+                        <th class="px-4 py-3.5 text-left">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Level</span>
+                        </th>
+                        <th class="px-4 py-3.5 text-center">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Employees</span>
+                        </th>
+                        <th class="px-4 py-3.5 text-left">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Status</span>
+                        </th>
+                        <th class="px-4 py-3.5 text-right">
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Actions</span>
+                        </th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y divide-slate-700/30">
                     @forelse($positions as $position)
-                        <tr>
-                            <td class="font-medium">{{ $position->code }}</td>
-                            <td>{{ $position->name }}</td>
-                            <td><span class="badge badge-primary">{{ $position->level_label }}</span></td>
-                            <td>{{ $position->assignments_count }}</td>
-                            <td>
-                                <span class="badge badge-{{ $position->is_active ? 'success' : 'neutral' }}">
-                                    {{ $position->is_active ? 'Active' : 'Inactive' }}
+                        <tr class="hover:bg-slate-800/30 transition-colors group">
+                            <td class="px-4 py-3.5">
+                                <span class="text-xs font-mono text-slate-500 bg-slate-800/50 px-2 py-1 rounded">{{ $position->code }}</span>
+                            </td>
+                            <td class="px-4 py-3.5">
+                                <span class="text-sm font-medium text-white">{{ $position->name }}</span>
+                            </td>
+                            <td class="px-4 py-3.5">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800/60 text-slate-300 border border-slate-700/40">
+                                    {{ $position->level_label ?? 'Level ' . $position->level }}
                                 </span>
                             </td>
-                            <td>
-                                <div class="table-actions">
-                                    <a href="{{ route('positions.edit', $position) }}" class="btn btn-ghost btn-sm">
-                                        <i data-lucide="pencil" width="16" height="16"></i>
+                            <td class="px-4 py-3.5 text-center">
+                                <span class="text-sm text-slate-300">{{ $position->assignments_count }}</span>
+                            </td>
+                            <td class="px-4 py-3.5">
+                                @if($position->is_active)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                        Active
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                        Inactive
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3.5">
+                                <div class="flex items-center justify-end gap-1">
+                                    <a 
+                                        href="{{ route('positions.edit', $position) }}" 
+                                        class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800/50 rounded-md transition-colors"
+                                        title="Edit position"
+                                    >
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted" style="padding: var(--space-8);">No positions found</td>
+                            <td colspan="6" class="px-4 py-16">
+                                <div class="flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+                                    <div class="w-14 h-14 rounded-xl bg-slate-800/50 flex items-center justify-center mb-4">
+                                        <i data-lucide="briefcase" class="w-7 h-7 text-slate-600"></i>
+                                    </div>
+                                    <h3 class="text-base font-semibold text-white mb-1">No positions found</h3>
+                                    <p class="text-sm text-slate-400 mb-5">
+                                        @if(request()->hasAny(['search', 'level', 'status']))
+                                            No results match your current filters. Try adjusting your search criteria.
+                                        @else
+                                            Get started by adding your first job position.
+                                        @endif
+                                    </p>
+                                    @if(request()->hasAny(['search', 'level', 'status']))
+                                        <a 
+                                            href="{{ route('positions.index') }}" 
+                                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors"
+                                        >
+                                            <i data-lucide="x" class="w-4 h-4"></i>
+                                            Clear filters
+                                        </a>
+                                    @else
+                                        <a 
+                                            href="{{ route('positions.create') }}" 
+                                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-all"
+                                        >
+                                            <i data-lucide="plus" class="w-4 h-4"></i>
+                                            Add Position
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
     </div>
+</div>
 @endsection
-
-@push('scripts')
-<script>lucide.createIcons();</script>
-@endpush

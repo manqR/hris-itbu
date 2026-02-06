@@ -28,8 +28,8 @@ return new class extends Migration
             $table->text('notes')->nullable();
             
             // Audit fields
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('employees')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('employees')->nullOnDelete();
             $table->timestamps();
             
             // Indexes

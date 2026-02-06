@@ -35,7 +35,6 @@ class PositionController extends Controller
         Position::create([
             ...$validated,
             'is_active' => true,
-            'created_by' => auth()->id(),
         ]);
 
         return redirect()->route('positions.index')->with('success', 'Position created successfully.');
@@ -57,7 +56,7 @@ class PositionController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $position->update([...$validated, 'updated_by' => auth()->id()]);
+        $position->update($validated);
 
         return redirect()->route('positions.index')->with('success', 'Position updated successfully.');
     }

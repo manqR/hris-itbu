@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('employee_id')->nullable()->constrained()->nullOnDelete();
             $table->string('action', 50); // created, updated, deleted, login, logout, etc.
             $table->string('auditable_type'); // Model class name
             $table->unsignedBigInteger('auditable_id')->nullable(); // Model ID
@@ -25,7 +25,7 @@ return new class extends Migration
 
             // Indexes for common queries
             $table->index(['auditable_type', 'auditable_id']);
-            $table->index('user_id');
+            $table->index('employee_id');
             $table->index('action');
             $table->index('created_at');
         });

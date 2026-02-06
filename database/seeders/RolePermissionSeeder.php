@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use App\Models\User;
+use App\Models\Employee;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -17,57 +17,92 @@ class RolePermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Permissions
+        // All permissions
         $permissions = [
-            'view_all_employees',
+            // Employee management
+            'view_employees',
             'create_employee',
             'edit_employee',
             'delete_employee',
+            
+            // Attendance
+            'view_attendance',
             'upload_attendance',
-            'view_all_attendance',
+            
+            // Leave/Permission
+            'view_leaves',
+            'create_leave',
             'approve_leave',
-            'view_any_leave',
+            
+            // Duty Assignment (Surat Tugas)
+            'view_duty_assignments',
+            'create_duty_assignment',
+            'approve_duty_assignment',
+            
+            // Master data management
+            'manage_master_data', // Parent permission for all master data
+            'manage_organizations',
+            'manage_departments',
+            'manage_positions',
+            'manage_leave_types',
+            'manage_menus',
+            
+            // System
             'audit_system',
-            'create_surat_tugas',
-            'clock_in_self_service', // Optional: for field employees
         ];
 
         foreach ($permissions as $permission) {
-            Permission::updateOrCreate(['name' => $permission]);
+            Permission::updateOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        // Roles
-        $superAdmin = Role::updateOrCreate(['name' => 'Super Admin']);
-        // Super Admin gets all permissions via Gate logic usually, but we can also assign all
+        // Roles and their permissions
+        
+        // Super Admin - All permissions
+        $superAdmin = Role::updateOrCreate(['name' => 'Super Admin', 'guard_name' => 'web']);
         $superAdmin->givePermissionTo(Permission::all());
 
-        $hrStaff = Role::updateOrCreate(['name' => 'HR Staff']);
+        // HR Staff
+        $hrStaff = Role::updateOrCreate(['name' => 'HR Staff', 'guard_name' => 'web']);
         $hrStaff->givePermissionTo([
-            'view_all_employees',
+            'view_employees',
             'create_employee',
             'edit_employee',
+            'view_attendance',
             'upload_attendance',
-            'view_all_attendance',
-            'view_any_leave',
-            'audit_system',
-            'create_surat_tugas',
-        ]);
-
-        $manager = Role::updateOrCreate(['name' => 'Division Manager']);
-        $manager->givePermissionTo([
-            'view_all_employees', 
+            'view_leaves',
             'approve_leave',
-            'create_surat_tugas',
+            'view_duty_assignments',
+            'create_duty_assignment',
+            'manage_master_data',
+            'manage_organizations',
+            'manage_departments',
+            'manage_positions',
+            'manage_leave_types',
+            'audit_system',
         ]);
 
-        $employee = Role::updateOrCreate(['name' => 'Employee']);
-        // Standard employees do NOT get clock_in_self_service by default now
-        // They only get basic view access (handled by app logic or basic perms)
+        // Division Manager
+        $manager = Role::updateOrCreate(['name' => 'Division Manager', 'guard_name' => 'web']);
+        $manager->givePermissionTo([
+            'view_employees',
+            'view_attendance',
+            'view_leaves',
+            'approve_leave',
+            'view_duty_assignments',
+            'create_duty_assignment',
+            'approve_duty_assignment',
+        ]);
 
-        // Assign Super Admin to existing Admin User
-        $adminUser = User::where('email', 'admin@hris.test')->first();
-        if ($adminUser) {
-            $adminUser->assignRole($superAdmin);
+        // Employee
+        $employee = Role::updateOrCreate(['name' => 'Employee', 'guard_name' => 'web']);
+        $employee->givePermissionTo([
+            'create_leave', // Can request leave
+        ]);
+
+        // Assign Super Admin to existing Admin Employee
+        $adminEmployee = Employee::where('email', 'admin@hris.test')->first();
+        if ($adminEmployee) {
+            $adminEmployee->assignRole($superAdmin);
             $this->command->info('Assigned Super Admin role to admin@hris.test');
         }
     }

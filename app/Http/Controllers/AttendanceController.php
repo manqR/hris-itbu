@@ -14,7 +14,7 @@ class AttendanceController extends Controller
      */
     public function index(Request $request)
     {
-        $assignments = auth()->user()->employee->activeAssignments;
+        $assignments = auth()->user()->activeAssignments;
         
         $selectedAssignmentId = $request->assignment_id ?? $assignments->first()?->id;
         
@@ -44,7 +44,7 @@ class AttendanceController extends Controller
 
         // Verify ownership
         $assignment = Assignment::findOrFail($request->assignment_id);
-        if ($assignment->employee_id !== auth()->user()->employee->id) {
+        if ($assignment->employee_id !== auth()->user()->id) {
             abort(403, 'Unauthorized');
         }
 
@@ -64,7 +64,6 @@ class AttendanceController extends Controller
             'status' => 'present',
             'latitude_in' => $request->latitude,
             'longitude_in' => $request->longitude,
-            'created_by' => auth()->id(),
         ]);
 
         return back()->with('success', 'Clocked in successfully at ' . Carbon::now()->format('H:i'));

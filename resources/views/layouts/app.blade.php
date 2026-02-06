@@ -13,25 +13,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Styles -->
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <!-- Icons (Lucide) -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- Alpine.js with Collapse Plugin -->
+    <script defer src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     @stack('styles')
 </head>
 <body>
-    <div class="app-container">
+    <div class="flex min-h-screen bg-[#0B1120]">
         <!-- Sidebar -->
         @include('layouts.partials.sidebar')
         
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="flex-1 lg:ml-72 flex flex-col min-h-screen transition-all duration-300">
             <!-- Top Header -->
             @include('layouts.partials.header')
             
             <!-- Page Content -->
-            <div class="page-content">
+            <div class="flex-1 p-6 sm:p-8 lg:p-10 max-w-[1600px] w-full mx-auto">
                 @yield('content')
             </div>
         </main>
@@ -44,8 +48,45 @@
         
         // Mobile sidebar toggle
         function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('open');
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
         }
+        
+        // Theme toggle functionality
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update icon visibility
+            updateThemeIcons(newTheme);
+        }
+        
+        function updateThemeIcons(theme) {
+            const lightIcons = document.querySelectorAll('.light-theme-icon');
+            const darkIcons = document.querySelectorAll('.dark-theme-icon');
+            
+            if (theme === 'light') {
+                lightIcons.forEach(icon => icon.classList.add('hidden'));
+                darkIcons.forEach(icon => icon.classList.remove('hidden'));
+            } else {
+                lightIcons.forEach(icon => icon.classList.remove('hidden'));
+                darkIcons.forEach(icon => icon.classList.add('hidden'));
+            }
+        }
+        
+        // Initialize theme on page load
+        (function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcons(savedTheme);
+            
+            // Re-initialize icons after theme is set
+            setTimeout(() => lucide.createIcons(), 100);
+        })();
     </script>
     
     @stack('scripts')

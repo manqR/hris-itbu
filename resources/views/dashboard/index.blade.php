@@ -24,15 +24,15 @@
             <div class="stat-label">Total Employees</div>
         </div>
         
-        {{-- Active Branches --}}
+        {{-- Active Organizations --}}
         <div class="card stat-card">
             <div class="flex items-center gap-3 mb-3">
                 <div style="width: 40px; height: 40px; background: var(--success-100); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
                     <i data-lucide="building-2" style="color: var(--success-600);" width="20" height="20"></i>
                 </div>
             </div>
-            <div class="stat-value">{{ $stats['total_branches'] ?? 0 }}</div>
-            <div class="stat-label">Active Branches</div>
+            <div class="stat-value">{{ $stats['total_organizations'] ?? 0 }}</div>
+            <div class="stat-label">Active Organizations</div>
         </div>
         
         {{-- Departments --}}
@@ -71,7 +71,7 @@
                         <thead>
                             <tr>
                                 <th>Employee</th>
-                                <th>Branch</th>
+                                <th>Organization</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -89,7 +89,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{{ $employee->primaryAssignment?->branch?->name ?? '-' }}</td>
+                                    <td>{{ $employee->primaryAssignment?->organization?->name ?? '-' }}</td>
                                     <td>
                                         <span class="badge badge-{{ $employee->employment_status === 'active' ? 'success' : 'neutral' }}">
                                             {{ ucfirst($employee->employment_status) }}
@@ -113,24 +113,24 @@
                 <h3 class="card-title">Organization Overview</h3>
             </div>
             <div class="card-body">
-                @forelse($branches ?? [] as $branch)
+                @forelse($organizations ?? [] as $org)
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <div style="width: 40px; height: 40px; background: var(--neutral-100); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
                                 <i data-lucide="building-2" style="color: var(--neutral-600);" width="18" height="18"></i>
                             </div>
                             <div>
-                                <div class="font-medium">{{ $branch->name }}</div>
-                                <div class="text-xs text-muted">{{ $branch->code }}</div>
+                                <div class="font-medium">{{ $org->name }}</div>
+                                <div class="text-xs text-muted">{{ $org->code }}</div>
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="font-semibold">{{ $branch->assignments_count ?? 0 }}</div>
+                            <div class="font-semibold">{{ $org->assignments_count ?? 0 }}</div>
                             <div class="text-xs text-muted">employees</div>
                         </div>
                     </div>
                 @empty
-                    <div class="text-center text-muted">No branches configured</div>
+                    <div class="text-center text-muted">No organizations configured</div>
                 @endforelse
             </div>
         </div>

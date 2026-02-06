@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('change_type', [
                 'profile_update',      // Personal information changes
                 'status_change',       // Employment status change
-                'assignment_added',    // New branch assignment
+                'assignment_added',    // New organization assignment
                 'assignment_updated',  // Assignment modification
                 'assignment_ended',    // Assignment terminated
                 'position_change',     // Position/title change
@@ -33,7 +33,7 @@ return new class extends Migration
             $table->text('new_value')->nullable();
             $table->date('effective_date'); // When the change takes effect
             $table->text('notes')->nullable();
-            $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('changed_by')->nullable()->constrained('employees')->nullOnDelete();
             $table->timestamp('created_at');
 
             $table->index('change_type');

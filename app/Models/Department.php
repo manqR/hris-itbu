@@ -17,8 +17,9 @@ class Department extends Model
     use BaseModel;
 
     protected $fillable = [
-        'branch_id',
+        'organization_id',
         'code',
+
         'name',
         'parent_id',
         'description',
@@ -32,11 +33,11 @@ class Department extends Model
     ];
 
     /**
-     * Get the branch this department belongs to.
+     * Get the organization this department belongs to.
      */
-    public function branch(): BelongsTo
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsTo(Organization::class);
     }
 
     /**

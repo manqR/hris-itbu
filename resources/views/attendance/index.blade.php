@@ -21,7 +21,7 @@
                     <select name="assignment_id" class="form-select" onchange="this.form.submit()">
                         @foreach($assignments as $assignment)
                             <option value="{{ $assignment->id }}" {{ $selectedAssignmentId == $assignment->id ? 'selected' : '' }}>
-                                {{ $assignment->position->name }} at {{ $assignment->branch->name }}
+                                {{ $assignment->position->name }} at {{ $assignment->organization->name }}
                             </option>
                         @endforeach
                     </select>

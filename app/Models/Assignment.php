@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Assignment Model
  * 
- * Links employees to branches with supervisor relationships.
- * An employee can have multiple active assignments (one per branch).
+ * Links employees to organizations with supervisor relationships.
+ * An employee can have multiple active assignments (one per organization).
  */
 class Assignment extends Model
 {
@@ -18,7 +18,7 @@ class Assignment extends Model
 
     protected $fillable = [
         'employee_id',
-        'branch_id',
+        'organization_id',
         'department_id',
         'position_id',
         'supervisor_id',
@@ -46,11 +46,11 @@ class Assignment extends Model
     }
 
     /**
-     * Get the branch.
+     * Get the organization.
      */
-    public function branch(): BelongsTo
+    public function organization(): BelongsTo
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsTo(Organization::class);
     }
 
     /**

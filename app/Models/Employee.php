@@ -3,23 +3,27 @@
 namespace App\Models;
 
 use App\Models\Concerns\BaseModel;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * Employee Model
  * 
- * Core employee data with multi-assignment support
+ * Core employee data with multi-assignment support.
+ * Also serves as the authentication model for the application.
  */
-class Employee extends Model
+class Employee extends Authenticatable
 {
-    use BaseModel;
+    use BaseModel, Notifiable, HasRoles;
 
     protected $fillable = [
         'employee_number',
         'name',
         'email',
+        'password',
         'phone',
         'gender',
         'birth_date',
@@ -34,10 +38,14 @@ class Employee extends Model
         'employment_status',
         'employment_type',
         'photo',
-        'user_id',
         'is_active',
         'created_by',
         'updated_by',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [
@@ -45,14 +53,15 @@ class Employee extends Model
         'hire_date' => 'date',
         'termination_date' => 'date',
         'is_active' => 'boolean',
+        'password' => 'hashed',
     ];
 
     /**
-     * Get the user account linked to this employee.
+     * Check if employee has login access (has a password set).
      */
-    public function user(): BelongsTo
+    public function hasLoginAccess(): bool
     {
-        return $this->belongsTo(User::class);
+        return !empty($this->password);
     }
 
     /**
@@ -116,12 +125,12 @@ class Employee extends Model
     }
 
     /**
-     * Check if employee is assigned to a specific branch.
+     * Check if employee is assigned to a specific organization.
      */
-    public function isAssignedTo(int $branchId): bool
+    public function isAssignedTo(int $organizationId): bool
     {
         return $this->activeAssignments()
-            ->where('branch_id', $branchId)
+            ->where('organization_id', $organizationId)
             ->exists();
     }
 
